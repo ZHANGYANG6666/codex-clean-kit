@@ -1,13 +1,19 @@
 param(
-  [switch]$Execute
+  [switch]$Execute,
+  [string]$CleanRoot = 'F:\CodexClean',
+  [string]$KitRoot
 )
 
 $ErrorActionPreference = 'Stop'
 
-$cleanRoot = 'F:\CodexClean'
-$home = Join-Path $cleanRoot 'Home'
-$runtime = Join-Path $cleanRoot 'Runtime'
-$projects = Join-Path $cleanRoot 'Projects'
+if (-not $KitRoot) {
+  $KitRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
+}
+
+$home = Join-Path $CleanRoot 'Home'
+$runtime = Join-Path $CleanRoot 'Runtime'
+$projects = Join-Path $CleanRoot 'Projects'
+$documentsCodex = Join-Path $env:USERPROFILE 'Documents\Codex'
 
 function Ensure-Junction {
   param(
@@ -37,19 +43,22 @@ function Ensure-Junction {
   New-Item -ItemType Junction -Path $Path -Target $Target | Out-Null
 }
 
-Write-Host "Clean root: $cleanRoot"
+Write-Host "Clean root: $CleanRoot"
 Write-Host "Default mode is dry-run. Use -Execute to modify paths."
 
 if ($Execute) {
-  New-Item -ItemType Directory -Path $home,$runtime,$projects -Force | Out-Null
+  New-Item -ItemType Directory -Path $home,$runtime,$projects,$documentsCodex -Force | Out-Null
 }
 
-Ensure-Junction -Path "$env:USERPROFILE\.codex" -Target $home
-Ensure-Junction -Path "$env:LOCALAPPDATA\OpenAI\Codex\runtimes" -Target $runtime
+Ensure-Junction -Path (Join-Path $env:USERPROFILE '.codex') -Target $home
+Ensure-Junction -Path (Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\runtimes') -Target $runtime
 
 if ($Execute) {
+  $template = Join-Path $KitRoot 'templates\config.toml'
   $config = Join-Path $home 'config.toml'
-  if (-not (Test-Path -LiteralPath $config)) {
+  if (Test-Path -LiteralPath $template) {
+    Copy-Item -LiteralPath $template -Destination $config -Force
+  } elseif (-not (Test-Path -LiteralPath $config)) {
     @"
 model_provider = "openai"
 personality = "pragmatic"
@@ -76,5 +85,4 @@ enabled = true
   }
 }
 
-Write-Host "Done. Reopen Codex after this script."
-
+Write-Host "Done. Start Codex after this script."

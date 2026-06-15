@@ -1,69 +1,142 @@
 # Codex Clean Rebuild Kit
 
-目标：把 Codex 的可复用配置迁移到英文路径，清理当前混乱的中文/乱码路径、半安装 runtime、残留 junction，然后重新安装并用脚本恢复一个干净环境。
+This repository is a clean rebuild kit for the Windows Codex desktop app.
 
-推荐英文路径：
+目标：把 Codex 的可复用配置固定到英文路径，清理当前可能损坏的中文/乱码用户路径、半安装 runtime、旧 junction 和残留数据，然后重新安装 Codex，并用脚本恢复一个干净环境。
 
-- `F:\CodexClean\Home`：新的 `.codex` 目录目标
-- `F:\CodexClean\Runtime`：Codex runtime 目标
-- `F:\CodexClean\Projects`：以后新建 Codex 项目/输出目录
-- `F:\CodexClean\Backups`：清理前备份
+## What This Kit Does
 
-## 为什么不直接把所有东西上传 GitHub
+Recommended clean paths:
 
-不要把完整 `.codex`、Roaming/Local app data、日志、会话、token、历史线程原样上传 GitHub。里面可能包含账号状态、历史对话、个人路径、插件缓存、临时文件和敏感配置。
+- `F:\CodexClean\Home`: target for `%USERPROFILE%\.codex`
+- `F:\CodexClean\Runtime`: target for `%LOCALAPPDATA%\OpenAI\Codex\runtimes`
+- `F:\CodexClean\Projects`: recommended location for future Codex workspaces
+- `F:\CodexClean\Backups`: local backups before deletion
 
-GitHub 只建议上传：
+Important: do not junction `%USERPROFILE%\Documents\Codex` by default. Codex can reject a projectless thread directory when that path is not a normal directory. Keep it as a real directory and put new working projects under `F:\CodexClean\Projects`.
 
-- 本目录 `CodexCleanKit`
-- `README.md`
-- `scripts/*.ps1`
-- 清理后的配置模板
-- skills 清单或你确认可公开的自定义 skills
+## Uploaded Files
 
-不建议上传：
+Safe files included in this repo:
 
-- `auth*`
-- `sessions`
-- `logs`
-- `history`
-- `*.db`
-- `*.sqlite`
-- `Local Storage`
-- `Session Storage`
-- `runtimes`
-- `plugins/cache`
-- 含 token/key/cookie 的文件
+- `README.md`: full reinstall instructions
+- `docs/`: path policy and recovery notes
+- `templates/config.toml`: clean Codex config template
+- `scripts/00_audit_current_codex.ps1`: inspect current Codex paths and package state
+- `scripts/01_backup_current_codex.ps1`: local backup before cleanup
+- `scripts/02_uninstall_clean_codex.ps1`: dry-run or execute cleanup
+- `scripts/03_rebuild_clean_codex.ps1`: create clean English-path junctions and config
+- `scripts/04_verify_clean_codex.ps1`: verify package, junctions, runtime, and config
+- `scripts/99_one_click_clean_codex.ps1`: one command wrapper for audit, backup, cleanup, rebuild
 
-## 使用顺序
+Not uploaded intentionally:
 
-1. 关闭 Codex。
-2. 以管理员 PowerShell 运行备份：
+- auth/session/token files
+- logs and conversation history
+- runtime binaries
+- plugin cache directories
+- browser local storage/session storage
+- SQLite databases
+
+These can contain account state, personal history, tokens, or very large/generated files.
+
+## Clean Reinstall Workflow
+
+Run PowerShell as Administrator.
+
+1. Clone or download this repo.
+
+```powershell
+git clone https://github.com/ZHANGYANG6666/codex-clean-kit.git F:\CodexCleanKit
+cd F:\CodexCleanKit
+```
+
+2. Close Codex completely.
+
+Also close all `Codex.exe` processes in Task Manager if they remain.
+
+3. Audit first.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\00_audit_current_codex.ps1
+```
+
+4. Back up local Codex data.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\01_backup_current_codex.ps1
 ```
 
-3. 先预览清理项：
+5. Preview cleanup.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\02_uninstall_clean_codex.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\02_uninstall_clean_codex.ps1 -IncludeStaleUserProfiles -RemoveAppPackage
 ```
 
-4. 确认后执行清理：
+6. Execute cleanup.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\02_uninstall_clean_codex.ps1 -Execute
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\02_uninstall_clean_codex.ps1 -Execute -IncludeStaleUserProfiles -RemoveAppPackage
 ```
 
-5. 重新下载安装 Codex。
-6. 运行干净重建：
+7. Reinstall Codex from the official source or Microsoft Store.
+
+8. Rebuild clean English-path config.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\03_rebuild_clean_codex.ps1 -Execute
 ```
 
-## 当前建议
+9. Verify.
 
-先不要急着上传 GitHub。先用这套脚本在本机完成干净重建，确认 Codex 启动正常、浏览器控制正常后，再把 `CodexCleanKit` 上传到 GitHub 私有仓库。
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\04_verify_clean_codex.ps1
+```
 
+## One Command Option
+
+Use this only after Codex is closed.
+
+Dry run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\99_one_click_clean_codex.ps1 -IncludeStaleUserProfiles -RemoveAppPackage
+```
+
+Execute:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\99_one_click_clean_codex.ps1 -Execute -IncludeStaleUserProfiles -RemoveAppPackage
+```
+
+After that, reinstall Codex, then run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\03_rebuild_clean_codex.ps1 -Execute
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\04_verify_clean_codex.ps1
+```
+
+## How To Tell Codex To Use English Paths
+
+Codex desktop may still live under your Windows user profile, but the large/mutable data should be redirected:
+
+- `%USERPROFILE%\.codex` is replaced with a junction to `F:\CodexClean\Home`
+- `%LOCALAPPDATA%\OpenAI\Codex\runtimes` is replaced with a junction to `F:\CodexClean\Runtime`
+- New projects should be created under `F:\CodexClean\Projects`
+
+Do not use Chinese paths for future Codex project directories. Create a project folder like:
+
+```powershell
+mkdir F:\CodexClean\Projects\my-project
+```
+
+Then open that folder from Codex.
+
+## Recovery Rule
+
+If Codex is slow again after reinstall:
+
+1. Run `scripts\04_verify_clean_codex.ps1`.
+2. Check that `.codex` and `runtimes` are junctions to `F:\CodexClean`.
+3. Check Chrome plugin status from Codex plugin UI and reinstall Chrome/Computer plugins if needed.
+4. Do not move `Documents\Codex` into a junction unless Codex officially supports it.

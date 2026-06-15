@@ -20,4 +20,7 @@ Session Storage/
 Code Cache/
 Cache/
 GPUCache/
-
+*.zip
+*.7z
+*.rar
+node_modules/

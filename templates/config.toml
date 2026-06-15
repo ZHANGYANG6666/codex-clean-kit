@@ -1,0 +1,21 @@
+model_provider = "openai"
+personality = "pragmatic"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
+service_tier = "default"
+
+[windows]
+sandbox = "elevated"
+
+[features]
+goals = true
+js_repl = false
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
