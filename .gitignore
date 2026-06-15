@@ -1,0 +1,23 @@
+# Never upload local secrets, sessions, logs, caches, or app data.
+Backups/
+Runtime/
+Home/
+Projects/
+*.log
+*.db
+*.sqlite
+*.sqlite-*
+*.bak
+*.backup*
+auth*
+sessions/
+logs/
+history/
+plugins/cache/
+runtimes/
+Local Storage/
+Session Storage/
+Code Cache/
+Cache/
+GPUCache/
+
